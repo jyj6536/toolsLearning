@@ -577,7 +577,7 @@ grep在指定的输入文件中搜索包含与给定模式匹配的行。默认�
 
 反向引用`\b`匹配之前被正则表达式的第n个括号内的子表达式匹配的子串，这里的n是一个非零的数字。例如，`(a)\1`匹配`aa`。如果括号内的子表达式没有参与匹配，那么整个匹配就会失败；例如，`(a)*\1`无法匹配`a`。如果括号内的子表达式匹配超过一个子字符串，那么反向引用指向最后一个匹配的子字符串。`(ab*)*\1`匹配`ababbabb`，不匹配`ababbab`。如果通过-e或文件（-f file）提供了多个正则表达式，那么反向引用只在每个表达式内部生效。
 
-对于一些反向引用的已知问题，参考[已知Bugs]()。
+对于一些反向引用的已知问题，参考[已知Bugs](###6.1 已知BUG)。
 
 ### 3.6 基本VS扩展正则表达式
 
@@ -849,3 +849,37 @@ g/re/p
 exec grep -E "$@"
 ~~~
 
+## 5. 性能
+
+通常情况下，grep是搜索文本的一种有效方式。然而，在某些情况下，它可能相当慢，而且它可以搜索大的文件，即使是轻微的性能调整也会有很大帮助。尽管grep使用的算法的实现细节在不同的版本中有所改变，但了解它的基本优点和缺点可以帮助提高其性能。
+
+grep命令的运行部分是通过一组为提高效率而设计的自动机，部分是通过一个较慢的匹配器，当快速匹配器遇到不寻常的特征（如反向参考）时，该匹配器会接管。在可行的情况下，Boyer-Moore快速字符串搜索算法被用来匹配单个固定模式，而Aho-Corasick算法被用来匹配多个固定模式。
+
+一般来说，grep在单字节的locale中运行得更有效，因为它可以避免对多字节字符的特殊处理。如果模式在那样的情况下也能正常工作，那么将LC_ALL设置为单字节的locale可以大大地提高性能。设置'LC_ALL='C''可以特别有效，因为grep是为该locals调整的。
+
+在'C' locale设置之外，不区分大小写的搜索，以及对`[a-z]`和`[=a=]b]`这样的括号表达式的搜索，由于难以对多字符整理元素这样的概念进行快速便携的访问，效率可能会出奇的低。
+
+区间表达式可以通过重复在内部实现。例如，`^(a|bc){2,4}$`可能被实现为`^(a|bc)(a|bc)(a|bc)?)?$`。大的重复次数可能会耗尽内存或大大降低匹配速度。即使是小的计数，如果级联也会引起问题；例如，`grep -E ".*{10,}{10,}{10,}{10,}{10,}`可能会溢出堆栈。幸运的是，像这样的正则表达式通常是人为的，而且级联重复不符合POSIX，所以无论如何不能用于可移植程序中。
+
+像`\1`这样的反向引用在某些情况下会严重影响性能，因为反向引用一般不能通过有限状态自动机来实现，而是要触发一个反向追踪算法，而这个算法的效率可能相当低。例如，尽管模式`^(.*)\1{14}(.*)\2{13}$`只匹配那些长度可以写成非负整数x和y的总和15x+14y的行，但模式匹配器并不执行线性二方分析，而是通过所有可能的匹配字符串进行回溯，使用的算法在最坏情况下是指数级的。
+
+在一些支持有空洞的文件的操作系统上——大量的零区域在二级存储上并不存在，grep可以有效地跳过空洞而不需要读取零。如果使用了-a (--binary-files=text))选项（见[文件和目录选择](####2.1.6 文件和目录选择)），除非同时使用了-z (--null-data))选项（见[其他选项](####2.1.7 其他选项)），否则这种优化是无效的。
+
+为了提高效率，grep并不总是读取它的所有输入。例如，shell命令`sed '/^...$/d' | grep -q X `可以导致grep在读取包含 "X"的一行后立即退出，而不去读取其他的输入数据。这反过来又会导致sed以非零状态退出，因为在grep退出后，sed不能写到它的输出管道。
+
+关于grep使用的算法和相关的字符串匹配算法的更多信息，参考：
+
+-  Aho AV. Algorithms for finding patterns in strings. In: van Leeuwen J. *Handbook of Theoretical Computer Science*, vol. A. New York: Elsevier; 1990. p. 255–300. This surveys classic string matching algorithms, some of which are used by `grep`.
+-  Aho AV, Corasick MJ. Efficient string matching: an aid to bibliographic search. *CACM*. 1975;18(6):333–40. https://doi.org/10.1145/360825.360855. This introduces the Aho–Corasick algorithm.
+-  Boyer RS, Moore JS. A fast string searching algorithm. *CACM*. 1977;20(10):762–72. https://doi.org/10.1145/359842.359859. This introduces the Boyer–Moore algorithm.
+-  Faro S, Lecroq T. The exact online string matching problem: a review of the most recent results. *ACM Comput Surv*. 2013;45(2):13. https://doi.org/10.1145/2431211.2431212. This surveys string matching algorithms that might help improve the performance of `grep` in the future.
+-  Hakak SI, Kamsin A, Shivakumara P, Gilkar GA, Khan WZ, Imran M. Exact string matching algorithms: survey issues, and future research directions. *IEEE Access*. 2019;7:69614–37. https://doi.org/10.1109/ACCESS.2019.2914071. This survey is more recent than Faro & Lecroq, and focuses on taxonomy instead of performance.
+-  Hume A, Sunday D. Fast string search. *Software Pract Exper*. 1991;21(11):1221–48. https://doi.org/10.1002/spe.4380211105. This excellent albeit now-dated survey aided the initial development of `grep`.
+
+## 6. BUG报告
+
+### 6.1 已知BUG
+
+在`{n,m}`结构中大的重复次数可能导致grep使用大量的内存。此外，某些其他晦涩的正则表达式需要指数级的时间和空间，并可能导致grep耗尽内存。
+
+反向引用会大大减慢匹配速度，因为它们会产生指数级的匹配可能性，会消耗时间和内存来搜索。而且，POSIX关于反向引用的规范有时并不明确。此外，许多正则表达式的实现都有反向引用的错误，会导致程序返回不正确的答案甚至崩溃，而修复这些错误往往是低优先级的：例如，截至2021年，GNU C库的错误数据库中包含了反向引用的错误52、10844、11053、24269和25322，而且几乎没有即将修复的迹象。幸运的是，反向引用很少有用，在实际应用中避免它们应该没有什么麻烦。
