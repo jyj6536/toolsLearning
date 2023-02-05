@@ -724,6 +724,125 @@ Fri Feb  3 12:00:49 PM UTC 2023
 Linux
 ~~~
 
+### 杂项命令
+
+默认地，SED 在单个行上进行操作，然而 SED 也可以在多行上进行操作。多行命令由大写字母表示。例如，与 **n** 命令不同，**N** 不会清空并打印模式缓冲空间。相反，它会在当前的模式缓冲区的末尾添加一个换行符（\n），从输入文件中读取下一行并追加到当前的模式缓冲区，执行剩余的 SED 命令以继续 SED 的标准流。
+
+**N** 命令的语法如下
+
+~~~shell
+[address1[,address2]]N
+~~~
+
+假如有以下输入
+
+~~~shell
+ A Storm of Swords 
+  George R. R. Martin
+ The Two Towers 
+  J. R. R. Tolkien
+ The Alchemist 
+  Paulo Coelho
+ The Fellowship of the Ring 
+  J. R. R. Tolkien
+ The Pilgrimage 
+  Paulo Coelho
+ A Game of Thrones 
+  George R. R. Martin
+~~~
+
+使用 SED 进行处理
+
+~~~shell
+$ sed 'N; s/\n/, /g'
+~~~
+
+输出
+
+~~~shell
+ A Storm of Swords ,  George R. R. Martin
+ The Two Towers ,  J. R. R. Tolkien
+ The Alchemist ,  Paulo Coelho
+ The Fellowship of the Ring ,  J. R. R. Tolkien
+ The Pilgrimage ,  Paulo Coelho
+ A Game of Thrones ,  George R. R. Martin
+~~~
+
+类似于 **p** 命令，我们有 **P** 命令打印有 **N** 创建的多行的模式空间中的第一部分（直到嵌入的换行符）。
+
+**P** 命令的语法如下
+
+~~~shell
+[address1[,address2]]P
+~~~
+
+仍然以上面的例子为例
+
+~~~shell
+$ sed -n 'N;P'
+~~~
+
+输出
+
+~~~shell
+ A Storm of Swords 
+ The Two Towers 
+ The Alchemist 
+ The Fellowship of the Ring 
+ The Pilgrimage 
+ A Game of Thrones 
+~~~
+
+SED 提供了 **v** 命令以进行版本检查。如果提供的版本比安装的版本高，那么命令会失败。该选项是 GNU 特定的，对于其他 SED 变体可能无法正常工作。
+
+**v** 命令的语法如下
+
+~~~shell
+[address1[,address2]]v
+~~~
+
+首先，查看 SED 版本
+
+```shell
+$sed --version
+```
+
+输出
+
+```shell
+sed (GNU sed) 4.8
+由 Debian 打包
+Copyright (C) 2020 Free Software Foundation, Inc.
+许可证 GPLv3+：GNU 通用公共许可证第 3 版或更新版本<https://gnu.org/licenses/gpl.html>。
+本软件是自由软件：您可以自由修改和重新发布它。
+在法律范围内没有其他保证。
+
+由 Jay Fenlason、Tom Lord、Ken Pizzini、
+Paolo Bonzini、Jim Meyering 和 Assaf Gordon 编写。
+
+本 sed 程序构建时含有 SELinux 支持。
+此系统已禁用 SELinux。
+
+GNU sed 主页：<https://www.gnu.org/software/sed/>。
+使用 GNU 软件的一般性帮助：<https://www.gnu.org/gethelp/>。
+请将错误报告发送至：<bug-sed@gnu.org>。
+
+```
+
+指定更高的版本
+
+~~~shell
+$ sed 'v 4.8' books.txt
+~~~
+
+输出
+
+~~~shell
+sed: -e 表达式 #1, 字符 7: 需要更高版本的sed↵
+~~~
+
+
+
 ## 参考文献
 
 [Sed Tutorial](https://www.tutorialspoint.com/sed/index.htm)
