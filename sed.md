@@ -841,7 +841,377 @@ $ sed 'v 4.8' books.txt
 sed: -e 表达式 #1, 字符 7: 需要更高版本的sed↵
 ~~~
 
+## 特殊字符
 
+SED 提供了作为命令的两个特殊字符。
+
+### = 命令
+
+**=** 命令打印行号。
+
+语法
+
+~~~shell
+[/pattern/]= 
+[address1[,address2]]=
+~~~
+
+例子
+
+~~~shell
+$ sed '=' books.txt 
+~~~
+
+输出
+
+~~~shell
+1
+1) A Storm of Swords, George R. R. Martin, 1216 
+2
+2) The Two Towers, J. R. R. Tolkien, 352 
+3
+3) The Alchemist, Paulo Coelho, 197 
+4
+4) The Fellowship of the Ring, J. R. R. Tolkien, 432 
+5
+5) The Pilgrimage, Paulo Coelho, 288 
+6
+6) A Game of Thrones, George R. R. Martin, 864
+~~~
+
+### & 命令
+
+无论何时，当一个模式匹配成功时，**&** 保存匹配成功的模式。**&** 通常与替换命令一起使用。
+
+例子
+
+~~~shell
+$ sed 's/[[:digit:]]/Book number &/' books.txt
+~~~
+
+输出
+
+~~~shell
+Book number 1) A Storm of Swords, George R. R. Martin, 1216 
+Book number 2) The Two Towers, J. R. R. Tolkien, 352 
+Book number 3) The Alchemist, Paulo Coelho, 197 
+Book number 4) The Fellowship of the Ring, J. R. R. Tolkien, 432 
+Book number 5) The Pilgrimage, Paulo Coelho, 288 
+Book number 6) A Game of Thrones, George R. R. Martin, 864
+~~~
+
+## 字符串
+
+### 替换命令
+
+语法
+
+~~~shell
+[address1[,address2]]s/pattern/replacement/[flags]
+~~~
+
+将 books.txt 中的逗号转换为竖线
+
+~~~shell
+$ sed 's/,/ | /' books.txt
+~~~
+
+输出
+
+~~~shell
+1) A Storm of Swords |  George R. R. Martin, 1216 
+2) The Two Towers |  J. R. R. Tolkien, 352 
+3) The Alchemist |  Paulo Coelho, 197 
+4) The Fellowship of the Ring |  J. R. R. Tolkien, 432 
+5) The Pilgrimage |  Paulo Coelho, 288 
+6) A Game of Thrones |  George R. R. Martin, 864
+~~~
+
+上面的例子只替换了第一个找到的逗号，这是 SED 的默认行为，可以通过全局标志（g）将所有逗号进行替换
+
+~~~shell
+$ sed 's/,/ | /g' books.txt
+~~~
+
+输出
+
+~~~shell
+1) A Storm of Swords |  George R. R. Martin |  1216 
+2) The Two Towers |  J. R. R. Tolkien |  352 
+3) The Alchemist |  Paulo Coelho |  197 
+4) The Fellowship of the Ring |  J. R. R. Tolkien |  432 
+5) The Pilgrimage |  Paulo Coelho |  288 
+6) A Game of Thrones |  George R. R. Martin |  864
+~~~
+
+仅在模式匹配成功时进行替换
+
+~~~shell
+$ sed '/The Pilgrimage/ s/,/ | /g' books.txt 
+~~~
+
+输出
+
+~~~shell
+1) A Storm of Swords, George R. R. Martin, 1216 
+2) The Two Towers, J. R. R. Tolkien, 352 
+3) The Alchemist, Paulo Coelho, 197 
+4) The Fellowship of the Ring, J. R. R. Tolkien, 432 
+5) The Pilgrimage |  Paulo Coelho |  288 
+6) A Game of Thrones, George R. R. Martin, 864
+~~~
+
+此外，SED 可以只替换某个特定出现次数的模式。下面的例子替换第二次出现的逗号
+
+~~~shell
+$ sed 's/,/ | /2' books.txt
+~~~
+
+输出
+
+~~~shell
+1) A Storm of Swords, George R. R. Martin |  1216 
+2) The Two Towers, J. R. R. Tolkien |  352 
+3) The Alchemist, Paulo Coelho |  197 
+4) The Fellowship of the Ring, J. R. R. Tolkien |  432 
+5) The Pilgrimage, Paulo Coelho |  288 
+6) A Game of Thrones, George R. R. Martin |  864
+~~~
+
+标志 **p** 可以打印发生替换操作的行
+
+~~~shell
+$ sed -n 's/Paulo Coelho/PAULO COELHO/p' books.txt
+~~~
+
+输出
+
+~~~shell
+3) The Alchemist, PAULO COELHO, 197 
+5) The Pilgrimage, PAULO COELHO, 288
+~~~
+
+标志 **w** 可以将发生变化的行存储在指定文件中
+
+~~~shell
+$ sed -n 's/Paulo Coelho/PAULO COELHO/w junk.txt' books.txt
+~~~
+
+执行后生成 **junk.txt**
+
+~~~shell
+$ ls
+books.txt  junk.txt
+~~~
+
+标志 **i** 可以忽略大小写
+
+~~~shell
+$ sed  -n 's/pAuLo CoElHo/PAULO COELHO/pi' books.txt
+~~~
+
+输出
+
+~~~shell
+3) The Alchemist, PAULO COELHO, 197 
+5) The Pilgrimage, PAULO COELHO, 288
+~~~
+
+除了反斜杠以外，SED 支持其他分隔符
+
+例子
+
+~~~shell
+$ echo "/bin/sed" | sed 's/\/bin\/sed/\/home\/jerry\/src\/sed\/sed-4.2.2\/sed/'
+$ echo "/bin/sed" | sed 's|/bin/sed|/home/jerry/src/sed/sed-4.2.2/sed|'
+$ echo "/bin/sed" | sed 's@/bin/sed@/home/jerry/src/sed/sed-4.2.2/sed@'
+$ echo "/bin/sed" | sed 's^/bin/sed^/home/jerry/src/sed/sed-4.2.2/sed^'
+~~~
+
+输出
+
+~~~shell
+/home/jerry/src/sed/sed-4.2.2/sed
+~~~
+
+### 创建子串
+
+SED 支持从匹配的文本中创建子串。
+
+~~~shell
+echo "Three One Two" | sed 's|\(\w\+\) \(\w\+\) \(\w\+\)|\2 \3 \1|'
+~~~
+
+其中，**\\w\\+** 匹配单个单词，括号进行了分组
+
+输出
+
+~~~shell
+One,Two,Three
+~~~
+
+### 字符串替换标志（仅适用于 GNU SED）
+
++ **\\L** 如果替换字符串中指定了 **\\L**，那么 **\\L**之后的所有字符都会被当作小写字符。
+
+  ~~~shell
+  $ sed -n 's/Paulo/PA\LULO/p' books.txt、
+  #输出
+  3) The Alchemist, PAulo Coelho, 197 
+  5) The Pilgrimage, PAulo Coelho, 288
+  ~~~
+
++ **\\u** 如果替换字符串中指定了 **\\u**，那么 **\\u** 之后的第一个字符会被当作大写字符。
+
+  ~~~shell
+  $ sed -n 's/Paulo/p\uaul\uo/p' books.txt
+  #输出
+  3) The Alchemist, pAulO Coelho, 197 
+  5) The Pilgrimage, pAulO Coelho, 288
+  ~~~
+
++ **\\U** 如果替换字符串中指定了 **\\U**，那么 **\\U** 之后的所有字符都会被当作大写字符。
+
+  ~~~shell
+  $ sed -n 's/Paulo/\Upaulo/p' books.txt 
+  #输出
+  3) The Alchemist, PAULO Coelho, 197 
+  5) The Pilgrimage, PAULO Coelho, 288 
+  ~~~
+
++ **\\E** 与 **\\L** 或 **\\U** 联合使用，停止它们的转换。
+
+  ~~~shell
+  $sed -n 's/Paulo Coelho/\Upaulo \Ecoelho/p' books.txt
+  #输出
+  3) The Alchemist, PAULO coelho, 197 
+  5) The Pilgrimage, PAULO coelho, 288 
+  $ sed -n 's/Paulo Coelho/\Upaulo coelho/p' books.txt
+  #输出
+  3) The Alchemist, PAULO COELHO, 197 
+  5) The Pilgrimage, PAULO COELHO, 288 
+  ~~~
+
+## 模式管理
+
+### n 命令
+
+语法
+
+```shell
+[address1[,address2]]n
+```
+
+例子
+
+```shell
+$ sed 'n' books.txt 
+```
+
+输出
+
+```shell
+1) A Storm of Swords, George R. R. Martin, 1216 
+2) The Two Towers, J. R. R. Tolkien, 352 
+3) The Alchemist, Paulo Coelho, 197 
+4) The Fellowship of the Ring, J. R. R. Tolkien, 432 
+5) The Pilgrimage, Paulo Coelho, 288 
+6) A Game of Thrones, George R. R. Martin, 864 
+```
+
+**n** 命令打印模式缓冲区的内容，清空模式缓冲区，将下一行放入模式缓冲区，并对其应用命令。
+
+现在，假定 **n** 之前由三条 SED 命令，**n** 之后由两条 SED 命令。
+
+~~~shell
+Sed command #1 
+Sed command #2 
+Sed command #3 
+n command 
+Sed command #4 
+Sed command #5
+~~~
+
+首先，SED 对模式缓冲区应用前三条命令，然后清空模式缓冲区并读取下一行，并且继续对模式缓冲区应用剩余的两条命令。
+
+SED 命令不能直接作用于保存缓冲区的内容。因此，如果想对其进行操作，需要将其放入模式缓冲区。**x** 命令可以交换模式缓冲区和保存缓冲区的内容。
+
+例子
+
+~~~shell
+sed -n 'x;n;x;p' books.txt
+~~~
+
+输出
+
+~~~shell
+1) A Storm of Swords, George R. R. Martin, 1216 
+3) The Alchemist, Paulo Coelho, 197 
+5) The Pilgrimage, Paulo Coelho, 288
+~~~
+
+上面的例子打印了所有的奇数行。
+
+**h** 命令处理保存缓冲区，它将模式缓冲区的内容拷贝到保存缓冲区。
+
+语法
+
+```shell
+[address1[,address2]]h 
+```
+
+以下面的文本为例进行说明
+
+~~~shell
+A Storm of Swords 
+George R. R. Martin 
+The Two Towers 
+J. R. R. Tolkien 
+The Alchemist 
+Paulo Coelho 
+The Fellowship of the Ring 
+J. R. R. Tolkien 
+The Pilgrimage 
+Paulo Coelho 
+A Game of Thrones 
+George R. R. Martin 
+~~~
+
+例子
+
+```shell
+$ sed -n '/Paulo/!h; /Paulo/{x;p}'
+```
+
+输出
+
+```shell
+The Alchemist 
+The Pilgrimage
+```
+
+首先，如果不匹配 Paulo，则将当前内容放入保存缓冲区；如果匹配 Paulo，则交换并打印。该命令打印了作者 Paulo 的所有作品。
+
+与 **h** 不同，**H** 命令将换行符和模式缓冲区中的内容追加到保存缓冲区中。
+
+语法
+
+```shell
+[address1[,address2]]H
+```
+
+仍然以上面的文本为例
+
+~~~shell
+sed -n '/Paulo/!h; /Paulo/{H;x};s/\n/,/p'
+~~~
+
+输出
+
+~~~shell
+The Alchemist ,Paulo Coelho 
+The Pilgrimage ,Paulo Coelho
+~~~
 
 ## 参考文献
 
