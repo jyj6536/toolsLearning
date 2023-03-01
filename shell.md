@@ -223,6 +223,203 @@ exit 2
 
 ## shell 数组
 
+shell 中数组是一种关联数组，类似于其他语言中的字典-
+
+~~~shell 
+array[1]=1
+array[a]="a"
+array[-1]=-1
+num=-1
+#引用数组 ${array[index]}
+echo ${array[1]} ${array[a]} ${array[-1]} ${array[$num]}
+#输出
+1 a -1
+~~~
+
+bash 可以通过下面的方式初始化数组-
+
+~~~shell
+array_name=(value1 ... valuen)
+~~~
+
+初始化后，数组的下标从0开始-
+
+~~~shell
+array=(1 2 3 4)
+echo ${array[0]} ${array[1]} ${array[2]} ${array[3]}
+#输出
+1 2 3 4
+~~~
+
+可以通过 * 与 @ 获取数组中的所有值-
+
+~~~shell
+${array_name[*]}
+${array_name[@]}
+~~~
+
+## 运算符
+
+每种 shell 都支持多种操作符。以 Bourne shell 为例-
+
++ 算术运算符
++ 关系运算符
++ 布尔运算符
++ 字符串运算符
++ 文件测试运算符
+
+Bourne shell 不支持任何的原生机制进行简单的算术运算，相反，它使用 awk 或者 expr 等外部命令。
+
+下面的例子展示了如何对两个数字进行相加-
+
+~~~shell
+val=`expr 2 + 2`
+echo "Total value : $val"
+#输出
+Total value : 4
+~~~
+
+需要注意，数字和运算符之间需要空格，`2+2`是错误的，正确的是`2 + 2`；完整的表达式需要被反引号包围。
+
+### 算术运算符
+
+假定两个变量 a 和 b 分别为 10 和 20。
+
+| 运算符 |  描述  |            例子            |
+| :----: | :----: | :------------------------: |
+|   +    |  加法  |  `expr $a + $b` 结果是30   |
+|   -    |  减法  |  `expr $a - $b`结果是-10   |
+|   *    |  乘法  |  `expr $a * $b`结果是200   |
+|   /    |  除法  |   `expr $b / $a`结果是2    |
+|   %    |  取模  |   `expr $b % $a`结果是0    |
+|   =    |  赋值  | `a = $b`会将 b 的值赋给 a  |
+|   ==   |  等于  | `[ $a == $b ]`会返回 false |
+|   !=   | 不等于 | `[ $a != $b ]`会返回 true  |
+
+需要注意，条件表达式应该被中括号包围并且两边有空格，**[ $a == $b ]** 是正确的然而 **[$a==$b]** 是错误的。
+
+所有的算术计算使用的都是长整型。
+
+### 关系运算符
+
+Bourne Shell 支持下列只对数值生效的关系运算符。
+
+假定两个变量 a 和 b 分别为 10 和 20。
+
+| 运算符 |   描述   |         例子          |
+| :----: | :------: | :-------------------: |
+|  -eq   |   等于   | `[ $a -eq $b ]` false |
+|  -ne   |  不等于  | `[ $a -ne $b ]` true  |
+|  -gt   |   大于   | `[ $a -gt $b ]` false |
+|  -lt   |   小于   | `[ $a -lt $b ]` true  |
+|  -ge   | 大于等于 | `[ $a -ge $b ]` false |
+|  -le   | 小于等于 | `[ $a -le $b ]` true  |
+
+同样地，与 == 以及 != 类似，条件表达式应该被中括号包围并且两边有空格，否则会出错。
+
+### 字符串运算符
+
+Bourne Shell 支持下列字符串运算符。
+
+假定两个变量 a 和 b 分别是 "abc" 和 "efg"-
+
+| 运算符 |                       描述                        |        例子         |
+| :----: | :-----------------------------------------------: | :-----------------: |
+|   =    |       检查两个操作数是否相等，是则返回 true       | `[ $a = $b ]` false |
+|   !=   |      检查两个操作数是否相等，是则返回 false       | `[ $a != $b ]` true |
+|   -z   | 检查给定的字符串操作数长度是否为零，为零返回 true |  `[ -z $a ]` false  |
+|   -n   | 检查给定的字符串操作数长度是否非零，非零返回 true |  `[ -n $a ]` true   |
+|  str   |      检查 str 是否是空字符串，是则返回 false      |    `[ $ ]` true     |
+
+### 文件测试操作符
+
+下列是测试文件各种属性的运算符。
+
+| 运算符 |                 描述                 |
+| :----: | :----------------------------------: |
+|   -b   |             是否为块文件             |
+|   -c   |            是否为字符文件            |
+|   -d   |              是否为目录              |
+|   -f   |            是否为普通文件            |
+|   -g   |     是否设置 group ID（SGID）位      |
+|   -k   |       是否设置粘滞（sticky）位       |
+|   -p   |          是否是一个命名管道          |
+|   -t   | 文件描述符是否打开并且与一个终端关联 |
+|   -u   |      是否设置 user ID（SUID）位      |
+|   -r   |               是否可读               |
+|   -w   |               是否可写               |
+|   -x   |              是否可执行              |
+|   -s   |            大小是否大于0             |
+|   -e   |               是否存在               |
+
+## 分支
+
+shell 支持两种分支语法 if else 以及 case
+
++ if fi
++ if else fi
++ if elif else fi
++ case esac
+
+if 例子
+
+```shell
+# test.sh
+a=$1
+b=$2
+echo a=$a,b=$b
+if [ $a -gt $b ]
+then
+	echo "a > b"
+elif [ $a -eq $b ]
+then
+	echo "a = b"
+else
+	echo "a < b"
+fi
+```
+
+case 例子
+
+语法
+
+~~~shell
+case word in
+   pattern1)
+      Statement(s) to be executed if pattern1 matches
+      ;;
+   pattern2)
+      Statement(s) to be executed if pattern2 matches
+      ;;
+   pattern3)
+      Statement(s) to be executed if pattern3 matches
+      ;;
+   *)
+     Default condition to be executed
+     ;;
+esac
+~~~
+
+例子
+
+~~~~shell
+option="${1}" 
+case ${option} in 
+   -f) FILE="${2}" 
+      echo "File name is $FILE"
+      ;; 
+   -d) DIR="${2}" 
+      echo "Dir name is $DIR"
+      ;; 
+   *)  
+      echo "`basename ${0}`:usage: [-f file] | [-d directory]" 
+      exit 1 # Command to come out of the program with status 1
+      ;; 
+esac 
+~~~~
+
+## 循环
+
 ## 参考文献
 
 [shell tutorial](https://www.tutorialspoint.com/unix/index.htm)
