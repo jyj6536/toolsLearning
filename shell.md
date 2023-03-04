@@ -420,6 +420,296 @@ esac
 
 ## 循环
 
-## 参考文献
+shell 中有四种循环-
+
++ while
++ for
++ until
++ select
+
+### while 循环
+
+```shell
+a=0
+
+while [ $a -lt 10 ]
+do
+   echo $a
+   a=`expr $a + 1`
+done
+```
+
+### for 循环
+
+```shell
+for var in 0 1 2 3 4 5 6 7 8 9
+do
+   echo $var
+done
+```
+
+### until 循环
+
+```shell
+a=0
+
+until [ ! $a -lt 10 ]
+do
+   echo $a
+   a=`expr $a + 1`
+done
+```
+
+输出
+
+```shell
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+```
+
+### select 循环
+
+select 循环在 ksh 中引入并且已经适配 bash，但是在 sh 中是不可用的。
+
+select 可以方便与用户的交互。
+
+```shell
+echo "What is your favourite OS?"
+select name in "Linux" "Windows" "Mac OS" "UNIX" "Android"
+do
+    case $name in
+        "Linux")
+            echo "Linux是一个类UNIX操作系统，它开源免费，运行在各种服务器设备和嵌入式设备。"
+            break
+            ;;
+        "Windows")
+            echo "Windows是微软开发的个人电脑操作系统，它是闭源收费的。"
+            break
+            ;;
+        "Mac OS")
+            echo "Mac OS是苹果公司基于UNIX开发的一款图形界面操作系统，只能运行与苹果提供的硬件之上。"
+            break
+            ;;
+        "UNIX")
+            echo "UNIX是操作系统的开山鼻祖，现在已经逐渐退出历史舞台，只应用在特殊场合。"
+            break
+            ;;
+        "Android")
+            echo "Android是由Google开发的手机操作系统，目前已经占据了70%的市场份额。"
+            break
+            ;;
+        *)
+            echo "输入错误，请重新输入"
+    esac
+done
+```
+
+输出
+
+```shell
+What is your favourite OS?
+1) Linux
+2) Windows
+3) Mac OS
+4) UNIX
+5) Android
+#? 1
+Linux是一个类UNIX操作系统，它开源免费，运行在各种服务器设备和嵌入式设备。
+```
+
+`#?`用来提示用户输入菜单编号。如果用户的输入是和合法的，`name` 会被赋值为对应的值，否则会被赋值为空；空输入会导致 select 重新打印选择列表；select 是死循环，只有 Ctrl+D 或者 break 才会退出循环。
+
+### 循环控制 
+
+break 与 continue 用来控制循环流程。
+
++ break 退出本层循环
++ break n 退出第 n 层嵌套循环
++ continue 退出当前循环的本次迭代
++ continue 退出第 n 层嵌套循环的本次迭代
+
+## 替换
+
+ shell 在遇到包含一个或多个特殊字符的表达式时执行替换。 
+
+下列是 echo 命令中的转义序列。
+
+| 序号 | 序列 | 描述           |
+| ---- | ---- | -------------- |
+| 1    | \\\\ | 反斜杠         |
+| 2    | \a   | 警告（BEL）    |
+| 3    | \b   | 退格           |
+| 4    | \c   | 禁止行尾的换行 |
+| 5    | \f   | 换页           |
+| 6    | \n   | 换行           |
+| 7    | \r   | 回车           |
+| 8    | \t   | 水平制表符     |
+| 9    | \v   | 垂直制表符     |
+
+反引号可以将命令的输出赋值给一个变量。
+
+```shell
+DATE=`date`
+echo $DATE
+#输出
+2023年 03月 02日 星期四 19:42:33 CST
+```
+
+变量替换允许 shell 程序员根据变量状态控制变量的值。
+
+| 序号 | 格式                | 描述                                                         |
+| ---- | ------------------- | ------------------------------------------------------------ |
+| 1    | **${var}**          | 以 var 的值进行替换。                                        |
+| 2    | **${var:-word}**    | 如果 var 的值是 null 或者未定义，使用 *word* 替换 var。      |
+| 3    | **${var:=word}**    | 如果 var 的值是 null 或者未定义，使用 *word* 替换 var。var 会被设置为 *word*。 |
+| 4    | **${var:?message}** | 如果 var 的值是 null 或者未定义，message 会被输出到标准输出。用来检查 var 是否被正确设置。 |
+| 5    | **${var:+word}**    | 如果 var 被设置，*word* 用来替换 var 的值。var 的值不会改变。 |
+
+## 引用
+
+Unix shell 它提供了一些元字符。
+
+下列是常用的 shell 元字符-
+
+```shell
+* ? [ ] ' " \ $ ; & ( ) | ^ < > new-line space tab
+```
+
+| 序号 | 引用   | 含义                                                         |
+| ---- | ------ | ------------------------------------------------------------ |
+| 1    | 单引号 | 所有被单引号引用的字符失去他们的特殊含义                     |
+| 2    | 双引号 | 大多数特殊字符失去他们的特殊含义，除了以下字符-<br />\\`<br />$<br />\$<br />\\"<br />\\\\<br />反引号 |
+| 3    | 反斜杠 | 任何紧跟反斜杠的字符失去其特殊含义                           |
+| 4    | 反引号 | 反引号之间的字符会被当作命令执行                             |
+
+## I/O 重定向
+
+| 序号 | 命令        | 描述                       |
+| ---- | ----------- | -------------------------- |
+| 1    | cmd > file  | 输出重定向到 file          |
+| 2    | cmd < file  | 从 file 读取输入           |
+| 3    | cmd >> file | 输出追加到 file            |
+| 4    | n > file    | 描述符 n 重定向到 file     |
+| 5    | n >> file   | 描述符 n 追加到 file       |
+| 6    | n > &m      | 将 n 合并到 m 输出         |
+| 7    | n <& m      | 将 n 合并到 m 输入         |
+| 8    | << tag      | 从标准输入读取直到遇到 tag |
+| 9    | \|          | 管道                       |
+
+丢弃输出
+
+```shell
+$ command > /dev/null
+```
+
+标准错误重定向到标准输出并丢弃
+
+```shell
+$ command > /dev/null 2>&1
+```
+
+将标准输出重定向到标准错误
+
+```shell
+$ echo message 1>&2
+```
+
+通常，描述符 0 代表标准输入，1 代表标准输出，2 代表标准错误。
+
+## 函数
+
+定义函数-
+
+```shell
+function_name () { 
+   list of commands
+}
+# 定义函数
+Hello () {
+   echo "Hello World"
+}
+# 调用函数
+Hello
+```
+
+传递参数-
+
+可以给函数传递参数，以 $1 $2 为代表
+
+```shell
+Hello () {
+   echo "Hello World $1 $2"
+}
+
+# 调用函数
+Hello Zara Ali
+```
+
+返回值-
+
+````shell
+return code
+````
+
+通过 return 进行返回，$?获取返回值。
+
+```shell
+# Define your function here
+Hello () {
+   echo "Hello World $1 $2"
+   return 10
+}
+
+# Invoke your function
+Hello Zara Ali
+
+# Capture value returnd by last command
+ret=$?
+
+echo "Return value is $ret"
+```
+
+嵌套调用-
+
+shell 函数支持嵌套调用以及递归
+
+```shell
+hello (){
+if [ $1 -gt 0 ]
+then
+hello `expr $1 - 1`
+echo $1
+return 0
+fi
+echo $1
+}
+hello 10
+# 输出
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+```
+
+
+
+## 参考文献 
 
 [shell tutorial](https://www.tutorialspoint.com/unix/index.htm)
+
+[Bash Reference Manual](https://www.gnu.org/software/bash/manual/bash.html)
