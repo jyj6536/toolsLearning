@@ -19,7 +19,7 @@ df [OPTION]... [FILE]...
 + -i, --inodes 列出 inode 信息而不是块的使用信息。
 + -k 类似 --block-size=*1K*
 + -l, --local 仅列出本地的文件系统。
-+ --no-sync 
++ --no-sync 在获取使用信息之前不同步（默认行为）
 + --output[=*FIELD_LIST*] 使用 *FIELD_LIST* 定义的格式进行输出，或者在 *FIELD_LIST* 被忽略的情况下打印所有输出。
 + -P, --portability 使用 POSIX 输出格式。
 + --sync 在获取使用信息之前调用同步。
