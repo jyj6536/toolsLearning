@@ -612,17 +612,18 @@ Unix shell 它提供了一些元字符。
 
 ## I/O 重定向
 
-| 序号 | 命令        | 描述                       |
-| ---- | ----------- | -------------------------- |
-| 1    | cmd > file  | 输出重定向到 file          |
-| 2    | cmd < file  | 从 file 读取输入           |
-| 3    | cmd >> file | 输出追加到 file            |
-| 4    | n > file    | 描述符 n 重定向到 file     |
-| 5    | n >> file   | 描述符 n 追加到 file       |
-| 6    | n > &m      | 将 n 合并到 m 输出         |
-| 7    | n <& m      | 将 n 合并到 m 输入         |
-| 8    | << tag      | 从标准输入读取直到遇到 tag |
-| 9    | \|          | 管道                       |
+| 序号 | 命令        | 描述                         |
+| ---- | ----------- | ---------------------------- |
+| 1    | cmd > file  | 输出重定向到 file            |
+| 2    | cmd < file  | 从 file 读取输入             |
+| 3    | cmd >> file | 输出追加到 file              |
+| 4    | n > file    | 描述符 n 重定向到 file       |
+| 5    | n >> file   | 描述符 n 追加到 file         |
+| 6    | n > &m      | 将 n 合并到 m 输出           |
+| 7    | n <& m      | 将 n 合并到 m 输入           |
+| 8    | << tag      | 从标准输入读取直到遇到 tag   |
+| 9    | <<< string  | 将字符串传递给命令的标准输入 |
+| 10   | \|          | 管道                         |
 
 丢弃输出
 
@@ -643,6 +644,57 @@ $ echo message 1>&2
 ```
 
 通常，描述符 0 代表标准输入，1 代表标准输出，2 代表标准错误。
+
+## read
+
+`read` 命令用于从标准输入或其他文件描述符中读取一行文本，并将其赋给一个变量。它是 Shell 编程中的一个常用命令，可用于创建交互式脚本和处理用户输入。
+
+### 语法
+
+```shell
+read [选项] 变量名
+```
+
+### 选项
+
+- `-p prompt`：指定一个提示符，用于提示用户输入。
+- `-r`：如果启用了此选项，反斜杠不会作为转义字符处理。
+- `-a array`：将输入分隔成单词，并将每个单词分配给数组中的元素。
+- `-n nchars`：在接收到指定数量的字符后停止输入。
+- `-s`：静默模式，用户输入不会回显到屏幕上。
+- `-t timeout`：在指定的秒数内无法读取到输入时，`read` 命令会失败并退出。
+
+### 例子
+
+~~~shell
+#!/bin/bash
+
+# 使用 -p 选项指定提示符
+read -p "Please enter your age: " age
+echo "You are $age years old."
+
+# 使用 -s 选项获取密码输入（不回显）
+echo -n "Please enter your password: "
+read -s password
+echo  # 换行
+echo "Password entered."
+
+# 使用 -a 选项将输入拆分到数组中
+echo "Enter some fruits separated by spaces: "
+read -a fruits
+echo "The first fruit is ${fruits[0]}"
+
+# 使用 -t 选项设置输入超时时间
+if read -t 5 -p "Please enter your input within 5 seconds: " userInput; then
+  echo "You entered: $userInput"
+else
+  echo "Time out."
+fi
+
+# 与 <<< 结合使用
+read var <<< "Hello, World"
+echo $var  # 输出：Hello, World
+~~~
 
 ## 函数
 
