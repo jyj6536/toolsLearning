@@ -238,7 +238,7 @@ vim 中基本的替换命令为 `:[range]s/目标字符串/替换字符串/[opti
 
 + `\@=` 顺序肯定断言
 
-  + `ice\d\@` 匹配后面是数字的 `ice`
+  + `ice\d\@=` 匹配后面是数字的 `ice`
   + `s/ice\d\@=/X/g` 将 `ice ice_2 ice2 iced` 替换为 `ice ice_2 iceX iced`
 
 + `\@<=` 逆序肯定断言
