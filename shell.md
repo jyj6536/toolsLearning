@@ -778,6 +778,18 @@ hello 10
 10
 ```
 
+## 配置文件加载顺序
+
+shell的执行模式分为交互式（输入输出数据都是从用户的终端）和非交互式（执行脚本）以及登录（用户成功登录之后开启的shell进程）和非登录，这些模式的组合会影响配置文件的加载，具体如下
+
+当启动一个交互式&登录的shell时，配置文件的加载顺序为 `/etc/profile —> ( ~/.bash_profile, ~/.bash_login, ~/.profile 其中之一，先找到哪个就执行哪个) —> ~/.bash_loginout`
+
+当启动一个交互式&非登录的shell时，配置文件的加载顺序为 `/etc/bash.bashrc —> ~/.bashrc`
+
+当启动一个非交互的shell时，此时配置项是从环境变量中读取和执行的，也就是`env`命令输出的配置项
+
+![image-20240410190151316](shell.assets/image-20240410190151316.png)
+
 ## 参考文献 
 
 [shell tutorial](https://www.tutorialspoint.com/unix/index.htm)
