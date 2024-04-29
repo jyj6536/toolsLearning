@@ -127,7 +127,7 @@ vim 中基本的替换命令为 `:[range]s/目标字符串/替换字符串/[opti
 + \\? 至多匹配一次
 
   + \\= 也可以使用，这在使用 ? 进行反向搜索时是非常有帮助的
-  + ab\? 匹配 abc 或者 ad，也可以匹配 abccccc 中的 abc
+  + abc\? 匹配 abc 或者 ab，也可以匹配 abccccc 中的 abc
 + \\{m,n},\\{m,},\\{,n},\\{n} 匹配 m 至 n 次，至少匹配 m 次，至多匹配 n 次，恰好匹配 n 次
 
   + ab\{1,4}c 匹配 abc、abcc、abccc、abcccc
@@ -143,7 +143,7 @@ vim 中基本的替换命令为 `:[range]s/目标字符串/替换字符串/[opti
 + \\{-} 尽可能少地匹配任意次
   + `s/t.\{-}a/X/g` 使用 `XX fabricaXle` 替换 `that is quite a fabricated tale`
     + 匹配的部分是 `tha`、`t is quite a` 以及 `ted ta`
-  + `s/t.*a/X/g`  使用 `Xlt` 替换 `that is quite a fabricated tale`
+  + `s/t.*a/X/g`  使用 `Xle` 替换 `that is quite a fabricated tale`
 + \\{-m,n} 尽可能少地匹配 m 至 n 次
 
 ### 字符类
@@ -272,7 +272,7 @@ vim 中基本的替换命令为 `:[range]s/目标字符串/替换字符串/[opti
 
 #### very magic
 
-默认的 vim 语法仅支持少量的元字符，类似于 `.`，`*` 和 `~` 。可以通过 `\v` 以获得与其他编程语言类似的语法。这允许使用更多的元字符 `(){}+?` 等等。使用 `、\v` 意味着其后的所有字符，除了 `0-9`、`a-z` 以及 `A-Z` 以外均有特殊含义。
+默认的 vim 语法仅支持少量的元字符，类似于 `.`，`*` 和 `~` 。可以通过 `\v` 以获得与其他编程语言类似的语法。这允许使用更多的元字符 `(){}+?` 等等。使用 `\v` 意味着其后的所有字符，除了 `0-9`、`a-z` 以及 `A-Z` 以外均有特殊含义。
 
 + `\v<his>` 匹配 `his` 以及 `to-his`
 + `a<b.*\v<end>` 匹配 `c=a<b #end`
