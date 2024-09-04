@@ -307,7 +307,7 @@ ZooKeeper的行为是由配置文件控制的。在假定存储布局相同的�
 
 - *maxGetChildrenResponseCacheSize*：(Java system property: **zookeeper.maxGetChildrenResponseCacheSize**)**3.6.0版本新特性**：类似于**maxResponseCacheSize**，但是适用于获取用户请求。指标**response_packet_get_children_cache_hits**和**response_packet_get_children_cache_misses**可以用来根据给定的工作负载调整这个值。该选项的默认值是400。0或者负值关闭该选项。
 
-- *autopurge.snapRetainCount*： (No Java system property)**3.4.0版本新特性**：启用后，ZooKeeper自动清理功能会在**dataDir**和**dataLogDir**中分别保留autopurge.sapRetainCount个最近的快照和相应的事务日志，并删除其余的日志。默认值为3。最小值是3。
+- *autopurge.snapRetainCount*： (No Java system property)**3.4.0版本新特性**：启用后，ZooKeeper自动清理功能会在**dataDir**和**dataLogDir**中分别保留autopurge.snapRetainCount个最近的快照和相应的事务日志，并删除其余的日志。默认值为3。最小值是3。
 
 - *autopurge.purgeInterval*：(No Java system property)**3.4.0版本新特性**：清理功能调度的时间间隔（小时）。设置为正值（大于等于1）以启动自动清理。默认值是0。
 

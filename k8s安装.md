@@ -57,7 +57,7 @@
    3. 添加docker软件源
 
       ~~~shell
-      add-apt-repository "deb [arch=amd64] http://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable"
+      add-apt-repository "deb [arch=amd64] https://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable"
       ~~~
 
    4. 安装docker
@@ -75,9 +75,7 @@
    6. 安装完成后，docker会自动启动
 
       ~~~shell
-      $ systemctl status docker.s
-      docker.service  docker.socket   
-      vbubuntu@node2:~$ systemctl status docker.service 
+      systemctl status docker.service 
       ● docker.service - docker Application Container Engine
            Loaded: loaded (/lib/systemd/system/docker.service; enabled; vendor preset: enabled)
            Active: active (running) since Tue 2023-12-05 14:56:34 CST; 6min ago
@@ -90,42 +88,53 @@
            CGroup: /system.slice/docker.service
                    └─2842 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
       ~~~
-
+   
    7. 查看docker版本
 
       ~~~shell
       $ docker version
-      Client: Docker Engine - Community
-       Version:           24.0.7
-       API version:       1.43
-       Go version:        go1.20.10
-       Git commit:        afdd53b
-       Built:             Thu Oct 26 09:07:41 2023
+       Version:           27.2.0
+       API version:       1.47
+       Go version:        go1.21.13
+       Git commit:        3ab4256
+       Built:             Tue Aug 27 14:15:13 2024
        OS/Arch:           linux/amd64
        Context:           default
       
       Server: Docker Engine - Community
        Engine:
-        Version:          24.0.7
-        API version:      1.43 (minimum version 1.12)
-        Go version:       go1.20.10
-        Git commit:       311b9ff
-        Built:            Thu Oct 26 09:07:41 2023
+        Version:          27.2.0
+        API version:      1.47 (minimum version 1.24)
+        Go version:       go1.21.13
+        Git commit:       3ab5c7d
+        Built:            Tue Aug 27 14:15:13 2024
         OS/Arch:          linux/amd64
         Experimental:     false
        containerd:
-        Version:          1.6.25
-        GitCommit:        d8f198a4ed8892c764191ef7b3b06d8a2eeb5c7f
+        Version:          1.7.21
+        GitCommit:        472731909fa34bd7bc9c087e4c27943f9835f111
        runc:
-        Version:          1.1.10
-        GitCommit:        v1.1.10-0-g18a0cb0
+        Version:          1.1.13
+        GitCommit:        v1.1.13-0-g58aa920
        docker-init:
         Version:          0.19.0
         GitCommit:        de40ad0
       ~~~
-
-   8. 运行hello-world镜像
-
+      
+   8. 配置镜像加速
+   
+      在 `/etc/docker/daemon.json` 中新增以下内容
+   
+      ~~~
+      {
+                 "registry-mirrors": ["https://docker.m.daocloud.io","https://dockerproxy.com","https://docker.mirrors.ustc.edu.cn","https://docker.nju.edu.cn"]
+      }
+      ~~~
+   
+      重启 docker 服务 `systemctl restart docker`
+   
+   9. 运行hello-world镜像
+   
       ~~~shell
       $ docker run hello-world
       Unable to find image 'hello-world:latest' locally
@@ -155,9 +164,9 @@
       For more examples and ideas, visit:
        https://docs.docker.com/get-started/
       ~~~
-
+   
       查看当前正在运行的container以及镜像
-
+   
       ~~~~shell
       $ docker ps -a
       CONTAINER ID   IMAGE         COMMAND    CREATED          STATUS                      PORTS     NAMES
@@ -195,34 +204,35 @@
 2. 检查 mac 地址以及 product_uuid，确保每个节点都不相同
 
    ~~~shell
-   $ip adddr
+   $ip addr
    $cat /sys/class/dmi/id/product_uuid
    ~~~
 
 3. 安装以下软件包
 
    ~~~shell
-   apt-get install -y apt-transport-https ca-certificates curl gpg
+   sudo apt install -y apt-transport-https ca-certificates curl gpg
    ~~~
 
 4. 下载 Kubernetes 软件包仓库的公共签名密钥
 
    ~~~shell
-   curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key |gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+   curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+   sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
    ~~~
 
 5. 添加合适的 k8s apt 仓库
 
    ~~~shell
-   echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+   echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
    ~~~
 
 6. 更新apt包索引，安装 `kubelet`、`kubeadm` 和 `kubectl`，并且保持版本以避免意外升级
 
    ~~~shell
-   apt update
-   apt install -y kubelet kubeadm kubectl
-   apt-mark hold kubelet kubeadm kubectl
+   sudo apt update
+   sudo apt install -y kubelet kubeadm kubectl
+   sudo apt-mark hold kubelet kubeadm kubectl
    ~~~
 
 7. 查看版本
@@ -240,39 +250,21 @@
 
 8. 修改 container 配置
 
-   初始化配置文件
+   初始化配置文件并修改
 
    ~~~shell
-   cat <<EOF > /etc/containerd/config.toml
-   version = 2
-   
-   [plugins]
-     [plugins."io.containerd.grpc.v1.cri"]
-       sandbox_image = "registry.aliyuncs.com/google_containers/pause:3.9"
-       [plugins."io.containerd.grpc.v1.cri".cni]
-         bin_dir = "/usr/lib/cni"
-         conf_dir = "/etc/cni/net.d"
-       [plugins."io.containerd.grpc.v1.cri".registry]
-          config_path = "/etc/containerd/certs.d"
-      [plugins."io.containerd.grpc.v1.cri".containerd]
-         [plugins."io.containerd.grpc.v1.cri".containerd.runtimes]
-           [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
-             runtime_type = "io.containerd.runc.v2"
-             [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
-               SystemdCgroup = true
-   
-   
-     [plugins."io.containerd.internal.v1.opt"]
-       path = "/var/lib/containerd/opt"
-   EOF
+   containerd config default > /etc/containerd/config.toml
+   #执行
+   sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+   sudo sed -i 's@sandbox_image = ".*"@sandbox_image = "registry.aliyuncs.com/google_containers/pause:3.10"@' /etc/containerd/config.toml
    ~~~
-
+   
    重启 containerd
-
+   
    ~~~shell
    systemctl restart containerd.service
    ~~~
-
+   
 9. 禁用swap分区
 
    ~~~shell
@@ -307,7 +299,7 @@
       kubeadm init \
         --apiserver-advertise-address=192.168.56.2 \
         --image-repository registry.aliyuncs.com/google_containers \
-        --kubernetes-version v1.28.4 \
+        --kubernetes-version v1.31.0 \
         --service-cidr=10.96.0.0/12 \
         --pod-network-cidr=10.244.0.0/16 \
         --ignore-preflight-errors=all
@@ -341,8 +333,7 @@
       
       Then you can join any number of worker nodes by running the following on each as root:
       
-      kubeadm join 192.168.56.2:6443 --token 7c0vz2.zcr0q7l8iouur3mp \
-              --discovery-token-ca-cert-hash sha256:3df7dd37307087e8d41c9a0213dd01b72f61a4a5d08e0df7389e0d445aac80b1
+      kubeadm join 192.168.56.2:6443 --token sl1hlj.ctd00d2todbah9df --discovery-token-ca-cert-hash sha256:dec59c180dc9238ce747f4e3360c4d871c820c4eb99c8a699fface1a5d8b4e20
       ~~~
 
       join 命令的token只有24小时的有效期，可以通过 `kubeadm token create --print-join-command` 获取新的token
@@ -355,13 +346,32 @@
       sudo chown $(id -u):$(id -g) $HOME/.kube/config
       ~~~
 
-      root用户执行在 `~/.bashrc` 中添加以下内容
+      root用户在 `~/.bashrc` 中添加以下内容
 
       ~~~~shell
-      export KUBECONFIG=/etc/kubernetes/admin.conf
+      export KUBECONFIG=/etc/kubernetes/kubelet.conf
       ~~~~
 
+      执行 `echo 'source <(kubectl completion bash)' >>~/.bashrc` 可以实现k8s命令自动补全（需要自动补全的用户执行），同时执行以下命令可以为 `kubectl` 设置别名
+
+      ~~~shell
+      echo 'alias kc=kubectl' >>~/.bashrc
+      echo 'complete -o default -F __start_kubectl kc' >>~/.bashrc
+      ~~~
+
    3. 设定容器网络
+
+      首先安装cni插件（所有节点都执行）
+
+      ~~~shell
+      #下载并安装cni插件
+      wget https://github.com/containernetworking/plugins/releases/download/v1.5.1/cni-plugins-linux-amd64-v1.5.1.tgz
+      #新建cni目录并解压
+      mkdir cni
+      tar -zxvf cni-plugins-linux-amd64-v1.5.1.tgz -C cni
+      #将解压得到的所有内容复制到/usr/lib/cni下
+      cp -r cni /usr/lib
+      ~~~
 
       使用 flannel 网络，下载 `kube-flannel.yml`
 
@@ -383,15 +393,17 @@
 
       执行 `kubectl apply -f kube-flannel.yml`
 
-      检查pod状态，执行 `kubectl get pod --all-namespaces` 发现 coredns处于 ContainerCreating 状态，需要修复（需要在node2、node3上同步执行）
+      执行 `kubectl get pod --all-namespaces` 发现 `kube-flannel` 报错 `Init:ImagePullBackOff`，需要手动通过代理下载镜像
 
       ~~~shell
-      #下载并安装cni插件
-      wget https://github.com/containernetworking/plugins/releases/download/v1.4.0/cni-plugins-linux-amd64-v1.4.0.tgz
-      #新建cni目录并解压
-      tar -zxvf cni-plugins-linux-amd64-v0.8.6.tgz -C cni
-      #将解压得到的所有内容复制到/usr/lib/cni下
-      cp -r cni /usr/lib
+      #查看需要的flannel镜像以及版本
+      grep image kube-flannel.yml 
+      image: docker.io/flannel/flannel-cni-plugin:v1.5.1-flannel2
+      image: docker.io/flannel/flannel:v0.25.6
+      image: docker.io/flannel/flannel:v0.25.6
+      #使用代理手工拉取
+      crictl pull docker.m.daocloud.io/flannel/flannel-cni-plugin:v1.5.1-flannel2
+      crictl pull docker.m.daocloud.io/flannel/flannel:v0.25.6
       ~~~
 
       再次执行 `kubectl get pod --all-namespaces` ，所有pod均正常
@@ -411,15 +423,14 @@
       执行 `kubectl get node` 获取主节点状态
 
       ~~~shell
-      NAME    STATUS   ROLES           AGE   VERSION
-      node1   Ready    control-plane   35m   v1.28.4
+      NAME    STATUS     ROLES           AGE     VERSION
+      node1   Ready      control-plane   44h     v1.31.0
       ~~~
 
 2. 添加子节点
 
-   利用第一步得到的 `kubeadm join 192.168.56.2:6443 --token 7c0vz2.zcr0q7l8iouur3mp \
-           --discovery-token-ca-cert-hash sha256:3df7dd37307087e8d41c9a0213dd01b72f61a4a5d08e0df7389e0d445aac80b1` 命令分别在node2、ndoe3 上执行，加入k8s集群
-
+   利用第一步得到的 `kubeadm join` 命令分别在node2、ndoe3 上执行，加入k8s集群
+   
    ~~~
    This node has joined the cluster:
    * Certificate signing request was sent to apiserver and a response was received.
@@ -427,9 +438,29 @@
    
    Run 'kubectl get nodes' on the control-plane to see this node join the cluster.
    ~~~
-
+   
+   root用户在 `~/.bashrc` 中添加以下内容
+   
+   ~~~~shell
+   export KUBECONFIG=/etc/kubernetes/kubelet.conf
+   ~~~~
+   
+   非root用户执行
+   
+   ~~~shell
+   mkdir -p $HOME/.kube
+   sudo cp -i /etc/kubernetes/kubelet.conf $HOME/.kube/config
+   sudo chown $(id -u):$(id -g) $HOME/.kube/config
+   #子节点需要修改一个文件的权限否则非root用户无法执行kubectl命令
+   sudo chmod 604 `ls -l /var/lib/kubelet/pki/kubelet-client-current.pem|xargs -n1|tail -n1`
+   ~~~
+   
+   执行 `echo 'source <(kubectl completion bash)' >>~/.bashrc` 可以实现k8s命令自动补全（需要自动补全的用户执行）
+   
+   子节点会遇到与master节点相同的 `kube-flannel` 问题，同样需要手动下载镜像
+   
    在 node1 上执行 `kubectl get nodes` 查看子节点状态，如果是 `NotReady` 则重启一下 containerd 服务
-
+   
    ~~~shell
    kubectl get node
    NAME    STATUS   ROLES           AGE   VERSION
@@ -476,7 +507,7 @@ https://nodeip:30443
 
 上述步骤完成了 dashboard 的安装，接下来需要创建 dashboard 的服务账户
 
-~~~~
+~~~~shell
 #创建一个名为 k8s-serviceaccount.yaml 的 yaml 文件，内容如下
 apiVersion: v1
 kind: ServiceAccount
@@ -518,6 +549,8 @@ kubectl -n kubernetes-dashboard describe secrets dashboard-admin-token
 #将 token 输入 dashboard 登录页面即可登录
 ~~~~
 
+## 参考文献
+
 [kubernetes(k8s)集群超级详细超全安装部署手册 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/627310856?utm_id=0)
 
 [分区扩容命令_resizepart-CSDN博客](https://blog.csdn.net/qq_39983826/article/details/122339291)
@@ -526,5 +559,4 @@ kubectl -n kubernetes-dashboard describe secrets dashboard-admin-token
 
 [lvextend 逻辑卷扩容（xfs_growfs、resize2fs配合扩展文件系统）_MssGuo的博客-CSDN博客](https://blog.csdn.net/MssGuo/article/details/120475752)
 
-[磁盘和文件系统管理中的LVM逻辑卷管理](https://blog.csdn.net/m0_64845603/article/details/130702359)
-
+[Linux磁盘管理：LVM逻辑卷基本概念及LVM的工作原理](https://wangying.sinaapp.com/archives/2301)
