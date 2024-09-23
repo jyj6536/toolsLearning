@@ -19,26 +19,21 @@
    修改 `/etc/systemd/timesyncd.conf`，新增配置 `NTP=ntp.ntsc.ac.cn`
 
    ```shell
-   [Time]
-   NTP=ntp.ntsc.ac.cn
-   #FallbackNTP=ntp.ubuntu.com
-   #RootDistanceMaxSec=5
-   #PollIntervalMinSec=32
-   #PollIntervalMaxSec=2048
+   sed -i 's/#NTP=/NTP=ntp.ntsc.ac.cn/' /etc/systemd/timesyncd.conf
    ```
-
+   
    重启服务生效
-
+   
    ~~~shell
    systemctl restart systemd-timesyncd
    ~~~
-
+   
    修改时区
-
+   
    ```shell
    timedatectl set-timezone Asia/Shanghai
    ```
-
+   
 3. 安装 docker
 
    1. 更新操作系统中的软件版本
@@ -126,9 +121,9 @@
       在 `/etc/docker/daemon.json` 中新增以下内容
    
       ~~~
-      {
+      echo '{
                  "registry-mirrors": ["https://docker.m.daocloud.io","https://dockerproxy.com","https://docker.mirrors.ustc.edu.cn","https://docker.nju.edu.cn"]
-      }
+      }' >> /etc/docker/daemon.json
       ~~~
    
       重启 docker 服务 `systemctl restart docker`
@@ -182,6 +177,7 @@
 1. 修改内核参数以及模块配置（参数设置以及模块装载情况可能已经符合要求，可以视情况决定是否执行）
 
    ~~~shell
+   lsmod |grep -E 'overlay|br_netfilter'
    cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
    overlay
    br_netfilter
@@ -191,6 +187,7 @@
    sudo modprobe br_netfilter
    
    # sysctl params required by setup, params persist across reboots
+   sysctl -a|grep -E 'net.bridge.bridge-nf-call-iptables|net.bridge.bridge-nf-call-ip6tables|net.ipv4.ip_forward\s'
    cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
    net.bridge.bridge-nf-call-iptables  = 1
    net.bridge.bridge-nf-call-ip6tables = 1
@@ -297,7 +294,7 @@
 
       ~~~shell
       kubeadm init \
-        --apiserver-advertise-address=192.168.56.2 \
+        --apiserver-advertise-address=192.168.56.3 \
         --image-repository registry.aliyuncs.com/google_containers \
         --kubernetes-version v1.31.0 \
         --service-cidr=10.96.0.0/12 \
@@ -333,7 +330,8 @@
       
       Then you can join any number of worker nodes by running the following on each as root:
       
-      kubeadm join 192.168.56.2:6443 --token sl1hlj.ctd00d2todbah9df --discovery-token-ca-cert-hash sha256:dec59c180dc9238ce747f4e3360c4d871c820c4eb99c8a699fface1a5d8b4e20
+      kubeadm join 192.168.56.3:6443 --token fc3sv1.2sq5luls2hlzvqqx \
+              --discovery-token-ca-cert-hash sha256:25c8773c0a8fb65a6547b3f6ae5c7e15b7842fd6c834781716217ece4e034f8d
       ~~~
 
       join 命令的token只有24小时的有效期，可以通过 `kubeadm token create --print-join-command` 获取新的token
@@ -349,7 +347,7 @@
       root用户在 `~/.bashrc` 中添加以下内容
 
       ~~~~shell
-      export KUBECONFIG=/etc/kubernetes/kubelet.conf
+      export KUBECONFIG=/etc/kubernetes/admin.conf
       ~~~~
 
       执行 `echo 'source <(kubectl completion bash)' >>~/.bashrc` 可以实现k8s命令自动补全（需要自动补全的用户执行），同时执行以下命令可以为 `kubectl` 设置别名
@@ -455,7 +453,12 @@
    sudo chmod 604 `ls -l /var/lib/kubelet/pki/kubelet-client-current.pem|xargs -n1|tail -n1`
    ~~~
    
-   执行 `echo 'source <(kubectl completion bash)' >>~/.bashrc` 可以实现k8s命令自动补全（需要自动补全的用户执行）
+   执行 `echo 'source <(kubectl completion bash)' >>~/.bashrc` 可以实现k8s命令自动补全（需要自动补全的用户执行），同时执行以下命令可以为 `kubectl` 设置别名
+   
+   ~~~shell
+   echo 'alias kc=kubectl' >>~/.bashrc
+   echo 'complete -o default -F __start_kubectl kc' >>~/.bashrc
+   ~~~
    
    子节点会遇到与master节点相同的 `kube-flannel` 问题，同样需要手动下载镜像
    
